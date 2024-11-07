@@ -35,3 +35,5 @@ class Card:
 class GameState:
     deck: List[Card]
     players: List[List[Card]]
+    community_cards: List[Card]
+    dealer_pos: int = 0 # Track dealer position for blinds rotation

@@ -1,4 +1,4 @@
-from utils import shuffle_deck, create_deck, deal_cards, draw_cards, rank_hand
+from utils import shuffle_deck, create_deck, deal_cards, rank_hand, betting_round
 from methods import GameState
 import asyncio
 
@@ -6,23 +6,32 @@ async def play_game(num_players: int) -> None:
     if num_players < 2 or num_players > 4:
         raise ValueError("Number of players must be between 2 and 4.")
     deck = await shuffle_deck(create_deck())
-    game_state = GameState(deck=deck, players=[[] for _ in range(num_players)])
+    game_state = GameState(deck=deck, players=[[] for _ in range(num_players)], community_cards = [])
 
     for i in range(num_players):
         game_state.players[i] = await deal_cards(game_state=game_state, num_cards=2)
 
+    for i, player_hand in enumerate(game_state.players):
+        print(f"Player {i + 1}'s hand: {', '.join(str(card) for card in player_hand)}")
+
+    # Pré-flop
+    await betting_round(num_players, game_state.dealer_pos)
+
     community_cards = []
     community_cards += await deal_cards(game_state=game_state, num_cards=3)
     print(f"Flop: {', '.join(str(card) for card in community_cards)}")
+    await betting_round(num_players, game_state.dealer_pos)
 
     community_cards += await deal_cards(game_state=game_state, num_cards=1)  
     print(f"Turn: {', '.join(str(card) for card in community_cards)}")
+    await betting_round(num_players, game_state.dealer_pos)
     
     community_cards += await deal_cards(game_state=game_state, num_cards=1)  
     print(f"River: {', '.join(str(card) for card in community_cards)}")
+    await betting_round(num_players, game_state.dealer_pos)
 
-    for i, player_hand in enumerate(game_state.players):
-        print(f"Player {i + 1}'s hand: {', '.join(str(card) for card in player_hand)}")
+    #for i, player_hand in enumerate(game_state.players):
+    #    print(f"Player {i + 1}'s hand: {', '.join(str(card) for card in player_hand)}")
 
     hand_ranks = [rank_hand(hand=player_hand + community_cards) for player_hand in game_state.players]
     max_rank = max(hand_ranks)
