@@ -52,12 +52,9 @@ async def play_game(num_players: int, num_rounds: int) -> None:
         max_rank = max(hand_ranks)
         winner_idx = hand_ranks.index(max_rank)
         for i, (rank, _, description) in enumerate(hand_ranks):
-            if rank > 0:
-                print(f"Player {i + 1} has a {description}")
-            else:
-                print(f"Player {i + 1} folded.")
+            print(f"Player {i + 1} has a {description}")
         print(f"\nPlayer {winner_idx + 1} wins with a {hand_ranks[winner_idx][2]}")
 
 if __name__ == "__main__":
     num_players = 3
-    asyncio.run(play_game(num_players=num_players, num_rounds=1))
+    asyncio.run(play_game(num_players=num_players, num_rounds=2))
