@@ -37,8 +37,12 @@ async def betting_round(num_players: int, dealer_pos: int, start_pos: int, is_pr
             options = ["call", "raise", "fold"]
         else:
             options = ["check", "raise", "fold"] if not raise_occured else ["call", "raise", "fold"]
-
-        action = input(f"Player {player_pos + 1}, choose an action ({'/'.join(options)}): ").strip().lower()
+        while True:
+            action = input(f"Player {player_pos + 1}, choose an action ({'/'.join(options)}): ").strip().lower()
+            if action in options:
+                break
+            else:
+                print(f"Invalid action by Player {player_pos + 1}. Please choose a valid option.")
         if action == "fold":
             print(f"Player {player_pos + 1} folds.")
         elif action == "raise":
