@@ -19,7 +19,7 @@ async def deal_cards(game_state: GameState, num_cards: int) -> List[Card]:
 
 async def place_blinds(num_players: int, dealer_pos: int):
     small_blind_pos = (dealer_pos + 1) % num_players
-    big_blind_pos = (dealer_pos + 2) % num_players
+    big_blind_pos = (small_blind_pos + 1) % num_players
     print(f"Player {small_blind_pos + 1} posts the small blind.")
     print(f"Player {big_blind_pos + 1} posts the big blind.\n")
     return small_blind_pos, big_blind_pos
