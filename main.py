@@ -2,59 +2,53 @@ from utils import *
 from methods import GameState
 import asyncio
 
-async def play_game(num_players: int, num_rounds: int) -> None:
-    if num_players < 2 or num_players > 4:
-        raise ValueError("Number of players must be between 2 and 4.")
-    
+async def play_game(num_players: int, num_rounds: int, starting_chips: int = 1000) -> None:
     deck = await shuffle_deck(create_deck())
-    game_state = GameState(deck=deck, players=[[] for _ in range(num_players)], community_cards = [])
-    
-    game_state.dealer_pos = 0
+    game_state = GameState(deck=deck, num_players=num_players, starting_chips=starting_chips)
     
     for round_num in range(num_rounds):
-        print(f"\n-- Rodada {round_num + 1} --")
+        print(f"\n-- Round {round_num + 1} --")
+        
+        # Reset the game state at the beginning of each round
+        game_state.reset_round()
 
-        # move a posição do dealer a cada rodada
-        game_state.dealer_pos = (game_state.dealer_pos + 1) % num_players
+        # Place blinds
+        small_blind_pos, big_blind_pos = await place_blinds(game_state=game_state)
 
-        community_cards = []
+        # Deal cards
+        for player in game_state.players:
+            player.hand = await deal_cards(game_state, num_cards=2)
+            player.current_bet = 0  # Reset player's bet at the start of the round
+        
+        # Pre-flop betting
+        await betting_round(game_state, is_preflop=True, small_blind_pos=small_blind_pos, big_blind_pos=big_blind_pos)
 
-        # apostar blinds
-        small_blind, big_blind = await place_blinds(num_players=num_players, dealer_pos=game_state.dealer_pos)
+        # Flop
+        game_state.community_cards = await deal_cards(game_state, num_cards=3)
+        print(f"Flop: {', '.join(str(card) for card in game_state.community_cards)}")
+        await betting_round(game_state)
 
-        for i in range(num_players):
-            game_state.players[i] = await deal_cards(game_state=game_state, num_cards=2)
+        # Turn
+        game_state.community_cards += await deal_cards(game_state, num_cards=1)
+        print(f"Turn: {', '.join(str(card) for card in game_state.community_cards)}")
+        await betting_round(game_state)
 
-        # Pré flop, small and big blind
-        active_players = await betting_round(num_players=num_players, dealer_pos=game_state.dealer_pos, start_pos=(big_blind + 1) % num_players, is_preflop=True, big_blind_pos=big_blind, small_blind_pos=small_blind)
+        # River
+        game_state.community_cards += await deal_cards(game_state, num_cards=1)
+        print(f"River: {', '.join(str(card) for card in game_state.community_cards)}")
+        await betting_round(game_state)
 
-        # next players, can choose only call, raise or fold
-
-        for i, player_hand in enumerate(game_state.players):
-            if active_players[i]:
-                print(f"Player {i + 1}'s hand: {', '.join(str(card) for card in player_hand)}")
-
-        community_cards += await deal_cards(game_state=game_state, num_cards=3)
-        print(f"Flop: {', '.join(str(card) for card in community_cards)}")
-        active_players = await betting_round(num_players, game_state.dealer_pos, start_pos=small_blind, active_players=active_players)
-
-        # a partir do flop até o River, se não houver nenhuma raise, só pode aparecer como opção check, raise ou fold
-
-        community_cards += await deal_cards(game_state=game_state, num_cards=1)  
-        print(f"Turn: {', '.join(str(card) for card in community_cards)}")
-        active_players = await betting_round(num_players, game_state.dealer_pos, start_pos=small_blind, active_players=active_players)
-
-        community_cards += await deal_cards(game_state=game_state, num_cards=1)  
-        print(f"River: {', '.join(str(card) for card in community_cards)}")
-        active_players = await betting_round(num_players, game_state.dealer_pos, start_pos=small_blind, active_players=active_players)
-
-        hand_ranks = [rank_hand(hand=player_hand + community_cards) for player_hand in game_state.players]
+        # Hand evaluation
+        hand_ranks = [rank_hand(player.hand + game_state.community_cards) for player in game_state.players]
         max_rank = max(hand_ranks)
         winner_idx = hand_ranks.index(max_rank)
-        for i, (rank, _, description) in enumerate(hand_ranks):
-            print(f"Player {i + 1} has a {description}")
-        print(f"\nPlayer {winner_idx + 1} wins with a {hand_ranks[winner_idx][2]}")
+        print(f"\n{game_state.players[winner_idx].name} wins with {hand_ranks[winner_idx][2]}.")
+        print(f"Final chip count of {game_state.players[winner_idx].name}: {game_state.players[winner_idx].chips} chips.")
+        
+        # Display the final chip count of all players
+        for player in game_state.players:
+            print(f"{player.name} has {player.chips} chips remaining.")
 
 if __name__ == "__main__":
     num_players = 3
-    asyncio.run(play_game(num_players=num_players, num_rounds=2))
+    asyncio.run(play_game(num_players=num_players, num_rounds=1))

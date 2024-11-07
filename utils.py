@@ -17,55 +17,74 @@ async def shuffle_deck(deck: List[Card]) -> List[Card]:
 async def deal_cards(game_state: GameState, num_cards: int) -> List[Card]:
     return [game_state.deck.pop() for _ in range(num_cards)]
 
-async def place_blinds(num_players: int, dealer_pos: int):
-    small_blind_pos = (dealer_pos + 1) % num_players
-    big_blind_pos = (small_blind_pos + 1) % num_players
+async def place_blinds(game_state: GameState):
+    small_blind_pos = (game_state.dealer_pos + 1) % len(game_state.players)
+    big_blind_pos = (small_blind_pos + 1) % len(game_state.players)
+
+    small_blind_player = game_state.players[small_blind_pos]
+    big_blind_player = game_state.players[big_blind_pos]
+
+    game_state.pot += game_state.small_blind
+    small_blind_player.bet(game_state.small_blind)
+
+    game_state.pot += game_state.big_blind
+    big_blind_player.bet(game_state.big_blind)
+
     print(f"Player {small_blind_pos + 1} posts the small blind.")
     print(f"Player {big_blind_pos + 1} posts the big blind.\n")
+    
     return small_blind_pos, big_blind_pos
 
-async def betting_round(
-        num_players: int, dealer_pos: int, start_pos: int, is_preflop: bool = False, small_blind_pos: int = None, big_blind_pos: int = None, active_players: List[bool] = None
-        ) -> None:
+async def betting_round(game_state: GameState, is_preflop: bool = False, small_blind_pos: int = None, big_blind_pos: int = None):
     raise_occured = False
     print("\nStarting a new betting round...")
 
-    if active_players is None:
-        active_players = [True] * num_players
-
-    # Placeholder for betting round logic
-    for i in range(num_players):
-        player_pos = (start_pos + i) % num_players
-        if is_preflop and (player_pos == small_blind_pos or player_pos == big_blind_pos):
+    for i, player in enumerate(game_state.players):
+        if not game_state.active_players[i]:
             continue
 
-        if not active_players[player_pos]:
+        if is_preflop and (i == small_blind_pos or i == big_blind_pos):
             continue
 
         if is_preflop:
             options = ["call", "raise", "fold"]
         else:
             options = ["check", "raise", "fold"] if not raise_occured else ["call", "raise", "fold"]
+        
+        # Display current player chip count
+        print(f"\n{player.name} has {player.chips} chips.")
+        print(f"Current pot: {game_state.pot} chips.")
+        
         while True:
-            action = input(f"Player {player_pos + 1}, choose an action ({'/'.join(options)}): ").strip().lower()
+            action = input(f"{player.name}, choose an action ({'/'.join(options)}): ").strip().lower()
             if action in options:
                 break
             else:
-                print(f"Invalid action by Player {player_pos + 1}. Please choose a valid option.")
+                print(f"Invalid action. Please choose a valid option.")
+
         if action == "fold":
-            active_players[player_pos] = False # mark player as inactive
-            print(f"Player {player_pos + 1} folds.")
+            game_state.active_players[i] = False
+            print(f"{player.name} folded.")
         elif action == "raise":
-            print(f"Player {player_pos + 1} raises.")
+            raise_amount = int(input(f"{player.name}, how much do you want to raise? "))
+            if raise_amount > player.chips:
+                print("Not enough chips to make this bet.")
+                continue
+            player.bet(raise_amount)
+            game_state.pot += raise_amount
+            print(f"{player.name} raised by {raise_amount} chips.")
             raise_occured = True
         elif action == "call":
-            print(f"Player {player_pos + 1} calls.")
+            call_amount = max(player.current_bet for player in game_state.players) - player.current_bet
+            if call_amount > player.chips:
+                call_amount = player.chips  # Player can call all-in if they don't have enough chips
+            player.bet(call_amount)
+            game_state.pot += call_amount
+            print(f"{player.name} called with {call_amount} chips.")
         elif action == "check":
-            print(f"Player {player_pos + 1} checks.")
-        else:
-            print(f"Invalid action by Player {player_pos + 1}.")
-    print("Betting round complete.\n")
-    return active_players
+            print(f"{player.name} checked.")
+        
+    print(f"Betting round complete. Final pot: {game_state.pot} chips.\n")
 
 def evaluate_five_card_hand(hand: List[Card]) -> Tuple[int, List[int], str]:
     ranks = sorted([card.rank.value for card in hand], reverse=True)
