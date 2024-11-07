@@ -17,21 +17,39 @@ async def shuffle_deck(deck: List[Card]) -> List[Card]:
 async def deal_cards(game_state: GameState, num_cards: int) -> List[Card]:
     return [game_state.deck.pop() for _ in range(num_cards)]
 
-async def betting_round(num_players: int, dealer_pos: int) -> None:
+async def place_blinds(num_players: int, dealer_pos: int):
+    small_blind_pos = (dealer_pos + 1) % num_players
+    big_blind_pos = (dealer_pos + 2) % num_players
+    print(f"Player {small_blind_pos + 1} posts the small blind.")
+    print(f"Player {big_blind_pos + 1} posts the big blind.\n")
+    return small_blind_pos, big_blind_pos
+
+async def betting_round(num_players: int, dealer_pos: int, start_pos: int, is_preflop: bool = False, small_blind_pos: int = None, big_blind_pos: int = None) -> None:
+    raise_occured = False
     print("\nStarting a new betting round...")
     # Placeholder for betting round logic
     for i in range(num_players):
-        action = input(f"Player {i + 1}, choose an action (check/call/raise/fold): ").strip().lower()
-        if action == "fold":
-            print(f"Player {i + 1} folds.")
-        elif action == "raise":
-            print(f"Player {i + 1} raises.")
-        elif action == "call":
-            print(f"Player {i + 1} calls.")
-        elif action == "check":
-            print(f"Player {i + 1} checks.")
+        player_pos = (start_pos + i) % num_players
+        if is_preflop and (player_pos == small_blind_pos or player_pos == big_blind_pos):
+            continue
+
+        if is_preflop:
+            options = ["call", "raise", "fold"]
         else:
-            print(f"Invalid action by Player {i + 1}.")
+            options = ["check", "raise", "fold"] if not raise_occured else ["call", "raise", "fold"]
+
+        action = input(f"Player {player_pos + 1}, choose an action ({'/'.join(options)}): ").strip().lower()
+        if action == "fold":
+            print(f"Player {player_pos + 1} folds.")
+        elif action == "raise":
+            print(f"Player {player_pos + 1} raises.")
+            raise_occured = True
+        elif action == "call":
+            print(f"Player {player_pos + 1} calls.")
+        elif action == "check":
+            print(f"Player {player_pos + 1} checks.")
+        else:
+            print(f"Invalid action by Player {player_pos + 1}.")
     print("Betting round complete.\n")
 
 def evaluate_five_card_hand(hand: List[Card]) -> Tuple[int, List[int], str]:
