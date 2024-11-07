@@ -24,13 +24,22 @@ async def place_blinds(num_players: int, dealer_pos: int):
     print(f"Player {big_blind_pos + 1} posts the big blind.\n")
     return small_blind_pos, big_blind_pos
 
-async def betting_round(num_players: int, dealer_pos: int, start_pos: int, is_preflop: bool = False, small_blind_pos: int = None, big_blind_pos: int = None) -> None:
+async def betting_round(
+        num_players: int, dealer_pos: int, start_pos: int, is_preflop: bool = False, small_blind_pos: int = None, big_blind_pos: int = None, active_players: List[bool] = None
+        ) -> None:
     raise_occured = False
     print("\nStarting a new betting round...")
+
+    if active_players is None:
+        active_players = [True] * num_players
+
     # Placeholder for betting round logic
     for i in range(num_players):
         player_pos = (start_pos + i) % num_players
         if is_preflop and (player_pos == small_blind_pos or player_pos == big_blind_pos):
+            continue
+
+        if not active_players[player_pos]:
             continue
 
         if is_preflop:
@@ -44,6 +53,7 @@ async def betting_round(num_players: int, dealer_pos: int, start_pos: int, is_pr
             else:
                 print(f"Invalid action by Player {player_pos + 1}. Please choose a valid option.")
         if action == "fold":
+            active_players[player_pos] = False # mark player as inactive
             print(f"Player {player_pos + 1} folds.")
         elif action == "raise":
             print(f"Player {player_pos + 1} raises.")
@@ -55,6 +65,7 @@ async def betting_round(num_players: int, dealer_pos: int, start_pos: int, is_pr
         else:
             print(f"Invalid action by Player {player_pos + 1}.")
     print("Betting round complete.\n")
+    return active_players
 
 def evaluate_five_card_hand(hand: List[Card]) -> Tuple[int, List[int], str]:
     ranks = sorted([card.rank.value for card in hand], reverse=True)
