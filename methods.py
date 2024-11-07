@@ -50,7 +50,7 @@ class Card:
 
 @dataclass
 class GameState:
-    def __init__(self, deck: List[Card], num_players: int, starting_chips: int, small_blind: int = 2, big_blind: int = 3):
+    def __init__(self, deck: List[Card], num_players: int, starting_chips: int, small_blind: int = 1, big_blind: int = 2):
         self.deck = deck
         self.players = [Player(f"Player {i+1}", starting_chips) for i in range(num_players)]
         self.community_cards: List[Card] = []
