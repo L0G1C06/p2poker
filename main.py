@@ -19,6 +19,7 @@ async def play_game(num_players: int, num_rounds: int, starting_chips: int = 100
         for player in game_state.players:
             player.hand = await deal_cards(game_state, num_cards=2)
             player.current_bet = 0  # Reset player's bet at the start of the round
+            game_state.active_players = [True] * num_players
 
         show_player_hand(game_state=game_state)
         
@@ -41,11 +42,16 @@ async def play_game(num_players: int, num_rounds: int, starting_chips: int = 100
         await betting_round(game_state)
 
         # Hand evaluation
-        hand_ranks = [rank_hand(player.hand + game_state.community_cards) for player in game_state.players]
-        max_rank = max(hand_ranks)
-        winner_idx = hand_ranks.index(max_rank)
-        print(f"\n{game_state.players[winner_idx].name} wins with {hand_ranks[winner_idx][2]}.")
-        print(f"Final chip count of {game_state.players[winner_idx].name}: {game_state.players[winner_idx].chips} chips.")
+        active_players = [player for i, player in enumerate(game_state.players) if game_state.active_players[i]]
+        if active_players:
+            hand_ranks = [rank_hand(player.hand + game_state.community_cards) for player in active_players]
+            max_rank = max(hand_ranks)
+            winner_idx = hand_ranks.index(max_rank)
+            winner = active_players[winner_idx]
+            print(f"\n{winner.name} wins with {hand_ranks[winner_idx][2]}.")
+            print(f"Final chip count of {winner.name}: {winner.chips} chips.")
+        else:
+            print("All the players have fold. There is no winner for this round.")
         
         # Display the final chip count of all players
         for player in game_state.players:
