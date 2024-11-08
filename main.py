@@ -48,6 +48,7 @@ async def play_game(num_players: int, num_rounds: int, starting_chips: int = 100
             max_rank = max(hand_ranks)
             winner_idx = hand_ranks.index(max_rank)
             winner = active_players[winner_idx]
+            winner.chips += game_state.pot
             print(f"\n{winner.name} wins with {hand_ranks[winner_idx][2]}.")
             print(f"Final chip count of {winner.name}: {winner.chips} chips.")
         else:
