@@ -19,6 +19,8 @@ async def play_game(num_players: int, num_rounds: int, starting_chips: int = 100
         for player in game_state.players:
             player.hand = await deal_cards(game_state, num_cards=2)
             player.current_bet = 0  # Reset player's bet at the start of the round
+
+        show_player_hand(game_state=game_state)
         
         # Pre-flop betting
         await betting_round(game_state, is_preflop=True, small_blind_pos=small_blind_pos, big_blind_pos=big_blind_pos)

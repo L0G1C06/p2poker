@@ -119,3 +119,9 @@ def rank_hand(hand: List[Card]) -> Tuple[int, List[int], str]:
         if combo_rank[0] > best_rank[0] or (combo_rank[0] == best_rank[0] and combo_rank[1] > best_rank[1]):
             best_rank = combo_rank
     return best_rank
+
+def show_player_hand(game_state: GameState):
+    print("\nPlayers hand:")
+    for player in game_state.players:
+        hand_str = ', '.join(str(card) for card in player.hand)
+        print(f"{player.name}: {hand_str}")
