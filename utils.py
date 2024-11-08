@@ -39,31 +39,41 @@ async def betting_round(game_state: GameState, is_preflop: bool = False, small_b
     raise_occured = False
     print("\nStarting a new betting round...")
 
-    for i, player in enumerate(game_state.players):
-        if not game_state.active_players[i]:
+    # Define a posição inicial para a rodada, iniciando com o jogador após o big blind
+    start_pos = (big_blind_pos + 1) % len(game_state.players) if is_preflop else 0
+    num_players = len(game_state.players)
+    
+    # Cria uma lista circular de jogadores começando após o big blind, no pré-flop
+    players_in_round = [((start_pos + i) % num_players) for i in range(num_players)]
+
+    # Itera sobre os jogadores na rodada de forma que cada um atue apenas uma vez
+    for pos in players_in_round:
+        player = game_state.players[pos]
+        
+        # Ignora jogadores que já desistiram
+        if not game_state.active_players[pos]:
             continue
 
-        if is_preflop and (i == small_blind_pos or i == big_blind_pos):
-            continue
-
+        # Determina as opções de ação para o jogador
         if is_preflop:
             options = ["call", "raise", "fold"]
         else:
             options = ["check", "raise", "fold"] if not raise_occured else ["call", "raise", "fold"]
-        
-        # Display current player chip count
+
+        # Exibe o total de fichas e o pote atual
         print(f"\n{player.name} has {player.chips} chips.")
         print(f"Current pot: {game_state.pot} chips.")
         
+        # Solicita a ação do jogador
         while True:
             action = input(f"{player.name}, choose an action ({'/'.join(options)}): ").strip().lower()
             if action in options:
                 break
             else:
-                print(f"Invalid action. Please choose a valid option.")
+                print("Invalid action. Please choose a valid option.")
 
         if action == "fold":
-            game_state.active_players[i] = False
+            game_state.active_players[pos] = False
             print(f"{player.name} folded.")
         elif action == "raise":
             raise_amount = int(input(f"{player.name}, how much do you want to raise? "))
@@ -75,9 +85,9 @@ async def betting_round(game_state: GameState, is_preflop: bool = False, small_b
             print(f"{player.name} raised by {raise_amount} chips.")
             raise_occured = True
         elif action == "call":
-            call_amount = max(player.current_bet for player in game_state.players) - player.current_bet
+            call_amount = max(p.current_bet for p in game_state.players) - player.current_bet
             if call_amount > player.chips:
-                call_amount = player.chips  # Player can call all-in if they don't have enough chips
+                call_amount = player.chips  # O jogador pode fazer all-in se não tiver fichas suficientes
             player.bet(call_amount)
             game_state.pot += call_amount
             print(f"{player.name} called with {call_amount} chips.")
