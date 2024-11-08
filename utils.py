@@ -135,3 +135,20 @@ def show_player_hand(game_state: GameState):
     for player in game_state.players:
         hand_str = ', '.join(str(card) for card in player.hand)
         print(f"{player.name}: {hand_str}")
+
+def determine_winners(game_state: GameState):
+    active_players = [player for i, player in enumerate(game_state.players) if game_state.active_players[i]]
+
+    hands = [(player, rank_hand(player.hand + game_state.community_cards)) for player in active_players]
+    max_rank = max(hand[1] for hand in hands)
+
+    winners = [player for player, rank in hands if rank == max_rank]
+
+    pot_share = game_state.pot // len(winners)
+    for winner in winners:
+        winner.chips += pot_share
+        print(f"{winner.name} wins {pot_share} chips with {', '.join(str(card) for card in winner.hand + game_state.community_cards)}")
+    leftover = game_state.pot % len(winners)
+    if leftover > 0:
+        print(f"{leftover} chip(s) remain in the pot (cannot be divided equally among winners).")
+    game_state.pot = 0
