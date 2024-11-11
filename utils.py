@@ -8,7 +8,6 @@ from phevaluator.evaluator import evaluate_cards
 from methods import Card, Suit, Rank, GameState
 
 def card_to_abbr(card: Card) -> str:
-    """Converte uma carta no formato de duas letras esperado pela função evaluate_cards."""
     # Mapa para converter valores de Rank para abreviações usadas na função evaluate_cards
     value_map = {
         Rank.ACE: "A", Rank.KING: "K", Rank.QUEEN: "Q", Rank.JACK: "J",
@@ -27,10 +26,9 @@ def card_to_abbr(card: Card) -> str:
     
     return f"{rank_abbr}{suit_abbr}"
 
-# Adapte a função `simulate` para converter as cartas
 def simulate(hand, table, players):
     # Cria um baralho completo
-    cards = create_deck()  # ou uma função que cria um baralho completo com todas as cartas
+    cards = create_deck() 
     full = table + hand
     
     # Remove as cartas que já estão em uso e embaralha o resto
