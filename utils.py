@@ -3,8 +3,69 @@ import random
 from typing import List, Tuple
 from collections import Counter
 from itertools import combinations
+from phevaluator.evaluator import evaluate_cards
 
 from methods import Card, Suit, Rank, GameState
+
+def card_to_abbr(card: Card) -> str:
+    """Converte uma carta no formato de duas letras esperado pela função evaluate_cards."""
+    # Mapa para converter valores de Rank para abreviações usadas na função evaluate_cards
+    value_map = {
+        Rank.ACE: "A", Rank.KING: "K", Rank.QUEEN: "Q", Rank.JACK: "J",
+        Rank.TEN: "T", Rank.NINE: "9", Rank.EIGHT: "8", Rank.SEVEN: "7",
+        Rank.SIX: "6", Rank.FIVE: "5", Rank.FOUR: "4", Rank.THREE: "3", Rank.TWO: "2"
+    }
+    
+    # Mapa de naipes
+    suit_map = {
+        Suit.SPADES: "s", Suit.HEARTS: "h", Suit.DIAMONDS: "d", Suit.CLUBS: "c"
+    }
+    
+    # Obtenha a abreviação para rank e suit
+    rank_abbr = value_map[card.rank]
+    suit_abbr = suit_map[card.suit]
+    
+    return f"{rank_abbr}{suit_abbr}"
+
+# Adapte a função `simulate` para converter as cartas
+def simulate(hand, table, players):
+    # Cria um baralho completo
+    cards = create_deck()  # ou uma função que cria um baralho completo com todas as cartas
+    full = table + hand
+    
+    # Remove as cartas que já estão em uso e embaralha o resto
+    deck = list(filter(lambda x: x not in full, cards))
+    deck = random.sample(deck, len(deck))  # shuffle o deck
+
+    hands = []
+    for i in range(players):
+        hn = [deck.pop(0), deck.pop(0)]
+        hands.append(hn)
+
+    # Adiciona flop, turn e river
+    while len(table) < 5:
+        table.append(deck.pop(0))
+
+    # Converte as cartas para o formato adequado antes de avaliar
+    full_hand = [card_to_abbr(card) if isinstance(card, Card) else card for card in table + hand]
+    my_hand_rank = evaluate_cards(*full_hand)
+
+    for check_hands in hands:
+        opponent_hand = [card_to_abbr(card) if isinstance(card, Card) else card for card in table + check_hands]
+        opponent_rank = evaluate_cards(*opponent_hand)
+
+        if opponent_rank < my_hand_rank:
+            return 1  # 'LOSE'
+        if opponent_rank == my_hand_rank:
+            return 2  # 'SPLIT'
+    return 0  # 'WIN'
+    
+def monte_carlo(hand, table, players=2, samples=10000):
+    dist = [0, 0, 0]
+    for _ in range(samples):
+        outcome = simulate(hand, table, players)
+        dist[outcome] += 1
+    return [round((x / samples) * 100, 2) for x in dist]
 
 def create_deck() -> List[Card]:
     return [Card(suit, rank) for suit in Suit for rank in Rank]

@@ -22,6 +22,13 @@ async def play_game(num_players: int, num_rounds: int, starting_chips: int = 100
             game_state.active_players = [True] * num_players
 
         show_player_hand(game_state=game_state)
+
+        # probabilities pré-flop
+        table = game_state.community_cards
+        print("\nPré-flop odds:")
+        for i, player in enumerate(game_state.players):
+            win, lose, split = monte_carlo(hand=player.hand, table=table, players=num_players)
+            print(f"Jogador {player.name} - Win: {win}%, Lose: {lose}%, Split: {split}%")
         
         # Pre-flop betting
         await betting_round(game_state, is_preflop=True, small_blind_pos=small_blind_pos, big_blind_pos=big_blind_pos)
@@ -29,32 +36,33 @@ async def play_game(num_players: int, num_rounds: int, starting_chips: int = 100
         # Flop
         game_state.community_cards = await deal_cards(game_state, num_cards=3)
         print(f"Flop: {', '.join(str(card) for card in game_state.community_cards)}")
+        print("\nAfter flop odds:")
+        for i, player in enumerate(game_state.players):
+            win, lose, split = monte_carlo(hand=player.hand, table=table, players=num_players)
+            print(f"Jogador {player.name} - Win: {win}%, Lose: {lose}%, Split: {split}%")
         await betting_round(game_state)
 
         # Turn
         game_state.community_cards += await deal_cards(game_state, num_cards=1)
         print(f"Turn: {', '.join(str(card) for card in game_state.community_cards)}")
+        print("\nAfter turn odds:")
+        for i, player in enumerate(game_state.players):
+            win, lose, split = monte_carlo(hand=player.hand, table=table, players=num_players)
+            print(f"Jogador {player.name} - Win: {win}%, Lose: {lose}%, Split: {split}%")
         await betting_round(game_state)
 
         # River
         game_state.community_cards += await deal_cards(game_state, num_cards=1)
         print(f"River: {', '.join(str(card) for card in game_state.community_cards)}")
+        print("\nPós river odds:")
+        for i, player in enumerate(game_state.players):
+            win, lose, split = monte_carlo(hand=player.hand, table=table, players=num_players)
+            print(f"Jogador {player.name} - Win: {win}%, Lose: {lose}%, Split: {split}%")
         await betting_round(game_state)
 
         determine_winners(game_state)
 
         # Hand evaluation
-        #active_players = [player for i, player in enumerate(game_state.players) if game_state.active_players[i]]
-        #if active_players:
-        #    hand_ranks = [rank_hand(player.hand + game_state.community_cards) for player in active_players]
-        #    max_rank = max(hand_ranks)
-        #    winner_idx = hand_ranks.index(max_rank)
-        #    winner = active_players[winner_idx]
-        #    winner.chips += game_state.pot
-        #    print(f"\n{winner.name} wins with {hand_ranks[winner_idx][2]}.")
-        #    print(f"Final chip count of {winner.name}: {winner.chips} chips.")
-        #else:
-        #    print("All the players have fold. There is no winner for this round.")
         
         # Display the final chip count of all players
         for player in game_state.players:
